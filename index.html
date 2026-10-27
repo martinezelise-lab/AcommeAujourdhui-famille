@@ -1461,6 +1461,55 @@
       allerOnglet('semaine');
     });
 
+    function exporterICS(titre, dateStr, heureStr, dureeMinutes = 60, description = "Créé via Agendream", codeRappel = "-PT15M") {
+      const debut = new Date(`${dateStr}T${heureStr || "09:00"}:00`);
+      const fin = new Date(debut.getTime() + dureeMinutes * 60000);
+
+      const formaterDateICS = (d) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+      const dStart = formaterDateICS(debut);
+      const dEnd = formaterDateICS(fin);
+      const now = formaterDateICS(new Date());
+
+      let blocAlarme = "";
+      if (codeRappel && codeRappel !== "none") {
+        blocAlarme = [
+          "BEGIN:VALARM",
+          `TRIGGER:${codeRappel}`,
+          "ACTION:DISPLAY",
+          "DESCRIPTION:Rappel",
+          "END:VALARM"
+        ].join("\r\n");
+    }
+
+      const lignes = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Agendream//FR",
+        "CALSCALE:GREGORIAN",
+        "BEGIN:VEVENT",
+        `UID:${now}-${Math.random().toString(36).substring(2, 9)}@agendream`,
+        `DTSTAMP:${now}`,
+        `DTSTART:${dStart}`,
+        `DTEND:${dEnd}`,
+        `SUMMARY:${titre}`,
+        `DESCRIPTION:${description}`,
+        blocAlarme,
+        "END:VEVENT",
+        "END:VCALENDAR"
+      ].filter(Boolean).join("\r\n");
+    
+      const blob = new Blob([lignes], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${titre.replace(/\s+/g, "_")}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
   </script>
 </body>
 </html>
